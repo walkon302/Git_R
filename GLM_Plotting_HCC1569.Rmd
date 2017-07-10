@@ -137,55 +137,60 @@ Box Graph
 Input {.sidebar}
 ---
 ```{r featurebox, echo = FALSE}
-# Select which treatment that I want to plot
+# Generate the list of conditions.
 inputPanel(
   selectInput("condition", label = h4("Select a condition"),
               choices = c('DMSO', 'Lapatinib', 'LapVP', 'All'),
               multiple = FALSE)
 )
 
-# Store a reactive object of EdU data for Shiny 
+# Store entire EdU data as a reactive Shiny object
 datadfEdU <- reactive({
   result <- glm.other.means
   return(result)
   })
 
-# Store a reactive object of pHER2/HER2 data for Shiny 
+# Store a entire pHER2/HER2 data as a reactive Shiny object
 datadfHER2 <- reactive({
   result <- glm.other.means.HER2
   return(result)
 })
 
-# Store a reactive object of selected treatment
+# Store selected condition as a reactive Shiny object
 condition <- reactive({
   result <- input$condition
   return(result)
 })
 
-
+# Store EdU data based on selected condition as a reactive Shiny object
 datasubdfEdU <- reactive({
   ifelse(condition() == 'All', result <- datadfEdU(), result <- subset(datadfEdU(), Treatment == condition()))
   return(result)
 })
 
+# Store pHER2/HER2 data based on selected condition as a reactive Shiny object
 datasubdfHER2 <- reactive({
   ifelse(condition() == 'All', result <- datadfHER2(), result <- subset(datadfHER2(), Treatment == condition()))
   return(result)
 })
 
+# Genearte the list of feature
 inputPanel(
   selectInput("inputfeature", label = h4("Select a feature"),
             choices = generatelist(glm.other.means)[c(which(sapply(glm.other.means, is.factor)))],
             multiple = FALSE)
 )
 
+# Store the selected feature as an reactive Shiny object
 feature <- reactive(input$inputfeature)
 
+# Store the EdU data based on condition and feature as a Shiny object
 gd1EdU <- reactive({
   result <- glmdata1(datasubdfEdU(), feature())
   return(result)
 })
 
+# Store the pHER2/HER2 data based on condition and feature as a Shiny object
 gd1HER2 <- reactive({
   result <- glmdata1(datasubdfHER2(), feature())
   return(result)
@@ -196,6 +201,8 @@ row
 ---
 ### Drug Response
 ```{r, echo = FALSE}
+
+# Plot bar plot of EdU data selected based on condition and feature.
 renderPlot({
   p <- glmline(gd1EdU(), 'EdU Incorporation \n (% DMSO Control)', 0, 130)
   p
@@ -204,6 +211,7 @@ renderPlot({
 
 ### pHER2/HER2 Status
 ```{r, echo = FALSE}
+# Plot bar plot of pHER2/HER2 data selected based on condition and feature.
 renderPlot({
   p <- glmline(gd1HER2(), 'pHER2/HER2 \n (Arbitrary Unit)', her2_min, her2_max)
   p
@@ -215,6 +223,7 @@ HeatMap
 Input {.sidebar}
 ---
 ```{r, echo = FALSE}
+# Generate the list of features.
 inputPanel(
   selectInput("inputfeature1", label = h4("Select a feature"),
             choices = generatelist(glm.other.means)[c(which(sapply(glm.other.means, is.factor)))],
@@ -226,21 +235,19 @@ inputPanel(
 feature1 <- reactive(input$inputfeature1)
 feature2 <- reactive(input$inputfeature2)
 
-datadf2EdU <- reactive({
-  result <- glm.other.means
-  return(result)
-  })
-
+# Store the pHER2/HER2 data without DMSO treatment as a Shiny object
 datadf2HER2 <- reactive({
   result <- glm.other.means.HER22
   return(result)
   })
 
+# Store the EdU data based on two features as a Shiny object 
 gd2EdU <- reactive({
-  result <- glmdata2(datadf2EdU(), feature1(), feature2())
+  result <- glmdata2(datadfEdU(), feature1(), feature2())
   return(result)
 })
 
+# Store the pHER2/HER2 data based on two features as a Shiny object 
 gd2HER2 <- reactive({
   result <- glmdata2(datadf2HER2(), feature1(), feature2())
   return(result)
@@ -251,6 +258,8 @@ row
 ---
 ### Drug Response
 ```{r, echo = FALSE}
+
+# Plot heatmap of EdU data based on selected two features.
 renderPlot({
   p <- glmplot(gd2EdU())
   p
@@ -259,6 +268,8 @@ renderPlot({
 
 ### pHER2/HER2 Status
 ```{r, echo = FALSE}
+
+# Plot heatmap of pHER2/HER2 data based on selected two features.
 renderPlot({
   p <- glmplot(gd2HER2())
   p
@@ -272,6 +283,7 @@ row
 ---
 ### ECM 
 ```{r, echo = FALSE}
+# Plot PCA individua factor map plot colored by ECM
 renderPlot({
   p <- fviz_pca_ind(res.pca, label = "none", axes = c(1,2), habillage = zsc.all$ECM,
                    addEllipses=TRUE, ellipse.level=0.95, labelsize = 2) +
@@ -284,6 +296,7 @@ renderPlot({
 
 ### Ligand
 ```{r, echo = FALSE}
+# Plot PCA individua factor map plot based on ligand
 renderPlot({
   p <- fviz_pca_ind(res.pca, label = "none", axes = c(1,2), habillage = zsc.all$Ligand,
                    addEllipses=TRUE, ellipse.level=0.95, labelsize = 2) +
@@ -298,6 +311,7 @@ row
 ---
 ### Treatment
 ```{r, echo = FALSE}
+# Plot PCA individua factor map plot based on Treatment
 renderPlot({
   p <- fviz_pca_ind(res.pca, label = "none", axes = c(1,2), habillage = zsc.all$Treatment,
                    addEllipses=TRUE, ellipse.level=0.95, labelsize = 2) +
@@ -310,6 +324,7 @@ renderPlot({
 
 ### Stiffness
 ```{r, echo = FALSE}
+# Plot PCA individua factor map plot based on Stiffness
 renderPlot({
   p <- fviz_pca_ind(res.pca, label = "none", axes = c(1,2), habillage = zsc.all$Stiffness,
                    addEllipses=TRUE, ellipse.level=0.95, labelsize = 2) +
