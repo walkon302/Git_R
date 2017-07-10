@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r global, include = FALSE}
+# Load packages
 suppressMessages(library(ggplot2))
 suppressMessages(library(reshape2))
 suppressMessages(library(grid))
@@ -21,16 +22,20 @@ suppressMessages(library(gridExtra))
 suppressMessages(library(shiny))
 suppressMessages(library(BoutrosLab.plotting.general))
 suppressMessages(library(factoextra))
+
+# Load pre-processed data
 load('/Users/Walkon302/Desktop/11112015_RE/GLM_means_HCC1569.RData')
 load('/Users/Walkon302/Desktop/11112015_RE/HCC1569_HER2_GLM.RData')
 load('/Users/Walkon302/Desktop/11112015_RE/HCC1569_pca.RData')
+
+# Removed the SE column and rename the data
 glm.other.means <- glm.other.means[-6]
 glm.other.means.HER2 <- glm.other.means.HER2[-6]
 
-Drug_Response <- glm.other.means
-pHER2_HER2_Status <- glm.other.means.HER2
+# Select data with only drug treatments.
 glm.other.means.HER22 <- subset(glm.other.means.HER2, Treatment != 'DMSO')
-DataSet <- c('Drug_Response', 'pHER2_HER2_Status')
+
+# Calculation of PCA
 ####
 res.pca <- prcomp(zsc.all[6:19], center=FALSE, scale=FALSE) # data already centered and scaled
 eig <- (res.pca$sdev)^2
@@ -38,13 +43,16 @@ variance <- eig*100/sum(eig)
 cumvar <- cumsum(variance)
 ####
 
+# Set up the limit of y-axis
 edu_min <- min(glm.other.means$`adjusted mean`)
 edu_max <- max(glm.other.means$`adjusted mean`)
-her2_min <- min(pHER2_HER2_Status$`adjusted mean`)
-her2_max <- max(pHER2_HER2_Status$`adjusted mean`)
+her2_min <- min(glm.other.means.HER2$`adjusted mean`)
+her2_max <- max(glm.other.means.HER2$`adjusted mean`)
 ```
 
 ```{r functions, include = FALSE}
+# Define the functions
+# Create the list of available columns
 generatelist <- function(name) {
   fulllist <- list()
   for (i in seq_along(colnames(name))) {
@@ -53,6 +61,7 @@ generatelist <- function(name) {
   return(fulllist)
 }
 
+# Prepare the data for plotting single component of GLM analysis
 glmdata1 <- function(data, cname) {
   datamean <- dcast(data, paste(cname, "~."), mean)
   datasd <- dcast(data, paste(cname, "~."), sd)
@@ -64,12 +73,14 @@ glmdata1 <- function(data, cname) {
   return(list(result, cname))
 }
 
+# Prepare the data for plotting pairwise interactions of GLM analysis
 glmdata2 <- function(data, rname, cname) {
   result <- dcast(data, paste(rname, "~", cname), mean)
   rownames(result) <- result[,1]
   return(list(result, rname, cname))
 }
 
+# Create the bar plot for single component of GLM analysis
 glmline <- function(data, ytitle, min, max) {
   result <- ggplot(data[[1]], aes_string(data[[2]], 'mean')) + 
     geom_bar(stat = 'identity', aes_string(fill = colnames(data[[1]][1]))) +
@@ -84,6 +95,7 @@ glmline <- function(data, ytitle, min, max) {
   return(result)
 }
 
+# Create the heatmap plot for pairwise interactions of GLM analysis
 glmplot <- function(data) {
   nr <- nrow(data[[1]])
   result <- create.heatmap(
@@ -125,25 +137,31 @@ Box Graph
 Input {.sidebar}
 ---
 ```{r featurebox, echo = FALSE}
+# Select which treatment that I want to plot
 inputPanel(
   selectInput("condition", label = h4("Select a condition"),
               choices = c('DMSO', 'Lapatinib', 'LapVP', 'All'),
               multiple = FALSE)
 )
 
+# Store a reactive object of EdU data for Shiny 
 datadfEdU <- reactive({
   result <- glm.other.means
   return(result)
   })
+
+# Store a reactive object of pHER2/HER2 data for Shiny 
 datadfHER2 <- reactive({
   result <- glm.other.means.HER2
   return(result)
 })
 
+# Store a reactive object of selected treatment
 condition <- reactive({
   result <- input$condition
   return(result)
 })
+
 
 datasubdfEdU <- reactive({
   ifelse(condition() == 'All', result <- datadfEdU(), result <- subset(datadfEdU(), Treatment == condition()))

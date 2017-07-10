@@ -1,5 +1,5 @@
 ---
-title: "GLM_Plotting"
+title: "PC3_GLM_Plotting"
 author: "Chun-Han Lin"
 date: "3/7/2017"
 output:
